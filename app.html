@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
+<title>PuntoLibre — Vista Previa</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#D6DBE4;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:18px 12px 40px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;}
+  .topbar{width:100%;max-width:390px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 4px;}
+  .topbar h1{font-size:15px;font-weight:800;color:#1A2E4A;}
+  .pill{background:rgba(232,25,44,0.12);color:#B5101E;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;}
+  .phone{width:100%;max-width:390px;height:820px;border-radius:38px;overflow:hidden;box-shadow:0 24px 60px rgba(15,35,66,0.35),0 0 0 8px rgba(255,255,255,0.12);background:#0F2342;display:flex;flex-direction:column;}
+  .sbar{background:#0F2342;height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.07);}
+  #main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+  .view{display:flex;flex-direction:column;height:100%;}
+  .scroll{flex:1;overflow-y:auto;padding:12px 15px;display:flex;flex-direction:column;gap:10px;background:#EEF1F6;}
+  .nheader{background:#0F2342;padding:12px 16px 14px;flex-shrink:0;}
+  .bnav{background:#0F2342;display:flex;padding:8px 0 14px;flex-shrink:0;}
+  .nbtn{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 0;}
+  .card{background:#fff;border-radius:12px;padding:13px 15px;box-shadow:0 1px 8px rgba(15,35,66,0.09);border:1px solid rgba(15,35,66,0.10);}
+  .badge{display:inline-block;font-size:11px;font-weight:700;border-radius:5px;padding:3px 8px;white-space:nowrap;}
+  .slabel{font-size:10px;font-weight:700;color:#8AA0B5;letter-spacing:.08em;text-transform:uppercase;margin-top:2px;}
+  input,button{font-family:inherit;}
+  input::placeholder{color:rgba(255,255,255,0.35);}
+  .hint{width:100%;max-width:390px;text-align:center;font-size:11px;color:#7A90A8;margin-top:12px;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>📍 PuntoLibre</h1>
+  <span class="pill">Vista Previa · Mock Data</span>
+</div>
+<div class="phone">
+  <div class="sbar">
+    <span style="font-size:11px;font-weight:700;color:#fff;">9:41</span>
+    <span style="font-size:11px;color:rgba(255,255,255,.7);">▂▄▆ 📶 🔋</span>
+  </div>
+  <div id="main"></div>
+</div>
+<p class="hint">Inicia sesión con cualquier rol · Contraseña para todos: <strong>123</strong></p>
+
+<script>
+/* ── PALETA ─────────────────────────────────────── */
+var C={
+  bg:'#EEF1F6',surface:'#fff',
+  navy:'#0F2342',navyMid:'#1A3A5C',
+  accent:'#E8192C',accentL:'#FDEAEC',accentD:'#B5101E',
+  text:'#0F1E30',textM:'#4A6078',textL:'#8AA0B5',
+  bdr:'rgba(15,35,66,0.10)',
+  ok:'#1A6E3C',okBg:'#E6F4ED',
+  warn:'#7A4F00',warnBg:'#FFF4DC',
+  err:'#C01020',errBg:'#FDEAEC',
+  info:'#0B5299',infoBg:'#E5F0FB'
+};
+
+/* ── MOCK DATA ───────────────────────────────────── */
+var ZONAS=[
+  {id:'z1',n:'La Vega',lv:'high',v:47,q:3,x:110,y:72,w:92,h:58},
+  {id:'z2',n:'Baquedano',lv:'high',v:38,q:0,x:202,y:150,w:84,h:52},
+  {id:'z3',n:'Alameda Ctr',lv:'med',v:22,q:8,x:52,y:162,w:104,h:48},
+  {id:'z4',n:'Mcdo.Central',lv:'med',v:19,q:5,x:72,y:104,w:76,h:52},
+  {id:'z5',n:'Bellavista',lv:'low',v:8,q:12,x:242,y:82,w:68,h:52},
+  {id:'z6',n:'Plaza Italia',lv:'low',v:5,q:15,x:284,y:195,w:58,h:42}
+];
+var TIENDAS=[
+  {id:'t1',n:'Galería El Vecino',sec:'La Vega',max:10,lib:5,x:95,y:90,r:4.8,d:'350m'},
+  {id:'t2',n:'Local Baquedano',sec:'Baquedano',max:8,lib:2,x:255,y:85,r:4.5,d:'620m'},
+  {id:'t3',n:'Ancla Alameda',sec:'Alameda',max:12,lib:8,x:165,y:175,r:4.6,d:'890m'},
+  {id:'t4',n:'Centro Comercio',sec:'Mercado',max:6,lib:0,x:295,y:160,r:4.2,d:'1.1km'}
+];
+var V0=[
+  {uid:'v1',n:'Carlos Muñoz',cod:'CM-04821',arr:'08:30',dur:'5h 20m',cat:'Ropa'},
+  {uid:'v2',n:'Ana López',cod:'AL-02134',arr:'09:15',dur:'4h 35m',cat:'Frutas'},
+  {uid:'v3',n:'Pedro Rojas',cod:'PR-07652',arr:'10:00',dur:'3h 50m',cat:'Artesanía'},
+  {uid:'v4',n:'María Soto',cod:'MS-03891',arr:'10:45',dur:'3h 05m',cat:'Libros'},
+  {uid:'v5',n:'Jorge Díaz',cod:'JD-05543',arr:'11:20',dur:'2h 30m',cat:'Alimentos'}
+];
+var H0=[
+  {id:'h1',n:'Carlos Muñoz',rut:'12.345.678-9',t:'11:42',ok:true,dest:'La Vega'},
+  {id:'h2',n:'Ana López',rut:'9.876.543-2',t:'11:05',ok:true,dest:'Bellavista'},
+  {id:'h3',n:'Pedro Rojas',rut:'14.111.222-3',t:'10:33',ok:false,dest:''},
+  {id:'h4',n:'María Soto',rut:'11.987.654-1',t:'09:58',ok:true,dest:'Alameda'},
+  {id:'h5',n:'Jorge Díaz',rut:'13.444.555-6',t:'09:22',ok:true,dest:'Mercado'}
+];
+
+/* ── STATE ───────────────────────────────────────── */
+var S={
+  role:null,
+  fTab:'inicio',fZ:null,fCupos:false,fQ:'',fStep:0,fHist:null,
+  cTab:'qr',cS:null,cEst:'reubicado',
+  aTab:'cupos',aCupos:5,aV:null,
+  adTab:'dashboard'
+};
+function resetState(){
+  S.role=null;S.fTab='inicio';S.fZ=null;S.fCupos=false;S.fQ='';S.fStep=0;
+  S.fHist=H0.map(function(h){return Object.assign({},h);});
+  S.cTab='qr';S.cS=null;S.cEst='reubicado';
+  S.aTab='cupos';S.aCupos=5;
+  S.aV=V0.map(function(v){return Object.assign({},v);});
+  S.adTab='dashboard';
+}
+resetState();
+
+/* ── HELPERS ─────────────────────────────────────── */
+function cs(ex){return 'background:#fff;border-radius:12px;padding:13px 15px;box-shadow:0 1px 8px rgba(15,35,66,0.09);border:1px solid rgba(15,35,66,0.10);'+(ex||'');}
+function bdg(lbl,type){
+  var m={ok:[C.okBg,C.ok],warn:[C.warnBg,C.warn],err:[C.errBg,C.err],info:[C.infoBg,C.info],
+    acc:[C.accentL,C.accentD],neu:['#E8EDF3',C.textM],navy:['rgba(15,35,66,0.12)',C.navy]};
+  var p=m[type]||m.info; var bg=p[0],col=p[1];
+  return '<span class="badge" style="background:'+bg+';color:'+col+';">'+lbl+'</span>';
+}
+function esc(s){return String(s).replace(/'/g,"\\'");}
+
+/* ── QR CODE ─────────────────────────────────────── */
+function qrSvg(size,id){
+  size=size||180; id=id||'CM-04821';
+  var cols=21,seed=0;
+  for(var i=0;i<id.length;i++) seed+=id.charCodeAt(i);
+  var rects='';
+  var cell=size/cols;
+  for(var idx=0;idx<cols*cols;idx++){
+    var r=Math.floor(idx/cols),c=idx%cols;
+    var inC=(r<7&&c<7)||(r<7&&c>=cols-7)||(r>=cols-7&&c<7);
+    var filled;
+    if(inC){var rr=r<7?r:r-(cols-7),cc=c<7?c:c-(cols-7);filled=(rr===0||rr===6||cc===0||cc===6)||(rr>=2&&rr<=4&&cc>=2&&cc<=4);}
+    else{seed=(seed*1664525+1013904223)&0x7fffffff;filled=(seed/0x7fffffff)>0.48;}
+    if(filled) rects+='<rect x="'+(c*cell+0.5)+'" y="'+(r*cell+0.5)+'" width="'+(cell-1)+'" height="'+(cell-1)+'" fill="'+C.navy+'" rx="0.8"/>';
+  }
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" style="display:block">'+rects+'</svg>';
+}
+
+/* ── HEAT MAP ────────────────────────────────────── */
+function heatSvg(selId,clickable){
+  var heat={high:'rgba(232,25,44,0.52)',med:'rgba(255,162,0,0.52)',low:'rgba(26,110,60,0.48)'};
+  var stk={high:'rgba(180,16,30,0.8)',med:'rgba(180,110,0,0.8)',low:'rgba(15,80,40,0.8)'};
+  var lines='';
+  var yy=[30,70,110,150,190,230];for(var i=0;i<yy.length;i++) lines+='<line x1="0" y1="'+yy[i]+'" x2="360" y2="'+yy[i]+'" stroke="#B8C8D6" stroke-width="7"/>';
+  var xx=[36,86,136,186,236,286,326];for(var j=0;j<xx.length;j++) lines+='<line x1="'+xx[j]+'" y1="0" x2="'+xx[j]+'" y2="270" stroke="#B8C8D6" stroke-width="7"/>';
+  var zs='';
+  for(var k=0;k<ZONAS.length;k++){
+    var z=ZONAS[k],w=z.w,h=z.h;
+    var fc=heat[z.lv]||heat.low,sc=selId===z.id?'white':(stk[z.lv]||stk.low),sw=selId===z.id?2.5:1.5;
+    var oc=clickable?' onclick="selZ(\''+esc(z.id)+'\')' +'" style="cursor:pointer"':' style="cursor:default"';
+    zs+='<g'+oc+'><rect x="'+z.x+'" y="'+z.y+'" width="'+w+'" height="'+h+'" rx="8" fill="'+fc+'" stroke="'+sc+'" stroke-width="'+sw+'"/>'
+      +'<text x="'+(z.x+w/2)+'" y="'+(z.y+h/2-4)+'" text-anchor="middle" font-size="9" font-weight="700" fill="white">'+z.n+'</text>'
+      +'<text x="'+(z.x+w/2)+'" y="'+(z.y+h/2+9)+'" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.85)">'+z.v+' vendedores</text></g>';
+  }
+  return '<svg width="100%" viewBox="0 0 360 270" style="display:block"><rect width="360" height="270" fill="#C8D4DF"/>'+lines+zs
+    +'<circle cx="182" cy="155" r="10" fill="'+C.accent+'" opacity="0.95"/><circle cx="182" cy="155" r="20" fill="'+C.accent+'" opacity="0.18"/><circle cx="182" cy="155" r="3.5" fill="white"/></svg>';
+}
+
+/* ── PIN MAP ─────────────────────────────────────── */
+function pinSvg(pins,ux,uy){
+  ux=ux||180;uy=uy||115;
+  var lines='';
+  var yy2=[28,68,108,148,188];for(var i=0;i<yy2.length;i++) lines+='<line x1="0" y1="'+yy2[i]+'" x2="360" y2="'+yy2[i]+'" stroke="#B8C8D6" stroke-width="6"/>';
+  var xx2=[36,86,136,186,236,286,326];for(var j=0;j<xx2.length;j++) lines+='<line x1="'+xx2[j]+'" y1="0" x2="'+xx2[j]+'" y2="220" stroke="#B8C8D6" stroke-width="6"/>';
+  var ps='';
+  for(var k=0;k<pins.length;k++){
+    var p=pins[k],col=p.col||C.accent;
+    var oc=p.fn?' onclick="'+p.fn+'" style="cursor:pointer"':' style="cursor:default"';
+    ps+='<g'+oc+'><ellipse cx="'+p.x+'" cy="'+(p.y+2)+'" rx="7" ry="3" fill="rgba(0,0,0,0.18)"/>'
+      +'<path d="M'+p.x+','+(p.y-2)+' C'+(p.x-13)+','+(p.y-16)+' '+(p.x-13)+','+(p.y-34)+' '+p.x+','+(p.y-38)+' C'+(p.x+13)+','+(p.y-34)+' '+(p.x+13)+','+(p.y-16)+' '+p.x+','+(p.y-2)+'" fill="'+col+'"/>'
+      +'<circle cx="'+p.x+'" cy="'+(p.y-23)+'" r="8" fill="white"/>'
+      +'<text x="'+p.x+'" y="'+(p.y-19)+'" text-anchor="middle" font-size="9" font-weight="800" fill="'+col+'">'+p.lbl+'</text></g>';
+  }
+  return '<svg width="100%" viewBox="0 0 360 220" style="display:block"><rect width="360" height="220" fill="#C8D4DF"/>'+lines+ps
+    +'<circle cx="'+ux+'" cy="'+uy+'" r="10" fill="'+C.navy+'" opacity="0.92"/><circle cx="'+ux+'" cy="'+uy+'" r="20" fill="'+C.navy+'" opacity="0.18"/><circle cx="'+ux+'" cy="'+uy+'" r="3.5" fill="white"/></svg>';
+}
+
+/* ── BOTTOM NAV ──────────────────────────────────── */
+function bnav(tabs,active){
+  var h='<div class="bnav">';
+  for(var i=0;i<tabs.length;i++){
+    var t=tabs[i],isA=active===t.id;
+    h+='<button class="nbtn" onclick="setTab(\''+t.id+'\')">'
+      +'<span style="font-size:18px;line-height:1;">'+t.ic+'</span>'
+      +'<span style="font-size:10px;font-weight:'+(isA?700:400)+';color:'+(isA?C.accent:'rgba(255,255,255,0.5)')+';">'+t.lb+'</span>'
+      +(isA?'<div style="width:20px;height:2.5px;border-radius:2px;background:'+C.accent+';"></div>':'')
+      +'</button>';
+  }
+  return h+'</div>';
+}
+
+/* ── NAVY HEADER ─────────────────────────────────── */
+function nhdr(role,name,extra){
+  return '<div class="nheader">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:'+(extra?'10px':'0')+'">'
+    +'<div><div style="font-size:10px;letter-spacing:.1em;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;">'+role+'</div>'
+    +'<div style="font-size:17px;font-weight:800;color:#fff;">'+name+'</div></div>'
+    +'<button onclick="doLogout()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:6px 12px;font-size:12px;color:#fff;cursor:pointer;font-weight:700;">Salir</button>'
+    +'</div>'+(extra||'')+'</div>';
+}
+
+/* ════════════════════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════════════════ */
+function loginHTML(){
+  var roles=[['Administrador','admin','🏛️'],['Fiscalizador','fiscal','👮'],['Comerciante','comerciante','🛒'],['Tienda Ancla','ancla','🏪']];
+  var btns='';
+  for(var i=0;i<roles.length;i++){
+    var r=roles[i];
+    btns+='<button onclick="quickLogin(\''+r[1]+'\')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;">'
+      +'<span style="font-size:22px;line-height:1;">'+r[2]+'</span>'
+      +'<span style="font-size:11px;font-weight:800;color:#fff;">'+r[0]+'</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,.4);">'+r[1]+' / 123</span>'
+      +'</button>';
+  }
+  return '<div class="view" style="background:'+C.navy+';overflow-y:auto;">'
+    +'<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 24px;">'
+    +'<div style="text-align:center;margin-bottom:32px;">'
+    +'<div style="width:72px;height:72px;border-radius:20px;background:'+C.accent+';display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 10px 32px rgba(232,25,44,.4);"><span style="font-size:34px;line-height:1;">📍</span></div>'
+    +'<div style="font-size:28px;font-weight:900;color:#fff;">PuntoLibre</div>'
+    +'<div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:5px;">Comercio ambulante ordenado y digno</div>'
+    +'</div>'
+    +'<div style="width:100%;display:flex;flex-direction:column;gap:10px;">'
+    +'<input id="lu" placeholder="Usuario" style="background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:14px 16px;font-size:15px;color:#fff;outline:none;width:100%;" oninput="hideLerr()"/>'
+    +'<input id="lp" type="password" placeholder="Contraseña" style="background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:14px 16px;font-size:15px;color:#fff;outline:none;width:100%;" onkeydown="if(event.key===\'Enter\')doLogin()"/>'
+    +'<div id="lerr" style="font-size:12px;color:#FF8090;text-align:center;display:none;">Usuario o contraseña incorrectos</div>'
+    +'<button onclick="doLogin()" style="background:'+C.accent+';color:#fff;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(232,25,44,.4);">Iniciar Sesión</button>'
+    +'</div>'
+    +'<div style="margin-top:28px;width:100%;">'
+    +'<div style="text-align:center;font-size:10px;color:rgba(255,255,255,.35);margin-bottom:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;">Acceso rápido · contraseña: 123</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+btns+'</div>'
+    +'</div></div></div>';
+}
+
+/* ════════════════════════════════════════════════════
+   FISCALIZADOR
+═══════════════════════════════════════════════════ */
+function fiscHTML(){
+  var llbl={high:'Crítico',med:'Moderado',low:'Óptimo'};
+  var ltyp={high:'err',med:'warn',low:'ok'};
+  var lclr={high:C.err,med:'#D4900A',low:C.ok};
+  var filt=ZONAS.filter(function(z){return(!S.fQ||z.n.toLowerCase().indexOf(S.fQ.toLowerCase())>=0)&&(!S.fCupos||z.q>0);});
+  var okCnt=0; for(var i=0;i<S.fHist.length;i++) if(S.fHist[i].ok) okCnt++;
+
+  var content='';
+  if(S.fTab==='inicio'){
+    content='<div style="'+cs('padding:0;overflow:hidden;')+'">'+heatSvg(S.fZ?S.fZ.id:null,true)
+      +'<div style="padding:6px 12px 10px;display:flex;gap:12px;align-items:center;">'
+      +'<div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;border-radius:2px;background:#E8192C;"></div><span style="font-size:10px;color:'+C.textM+';">Crítico</span></div>'
+      +'<div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;border-radius:2px;background:#FFA200;"></div><span style="font-size:10px;color:'+C.textM+';">Moderado</span></div>'
+      +'<div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;border-radius:2px;background:#1A6E3C;"></div><span style="font-size:10px;color:'+C.textM+';">Óptimo</span></div>'
+      +'<span style="margin-left:auto;font-size:10px;color:'+C.textL+';">Toca una zona</span></div></div>';
+
+    if(S.fZ){
+      content+='<div style="'+cs('')+'border-left:4px solid '+lclr[S.fZ.lv]+';border-radius:0 12px 12px 0;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
+        +'<div><div style="font-size:15px;font-weight:800;color:'+C.text+';">'+S.fZ.n+'</div>'
+        +'<div style="font-size:12px;color:'+C.textM+';margin-top:2px;">'+S.fZ.v+' vendedores activos</div></div>'
+        +'<div style="display:flex;gap:6px;align-items:center;">'+bdg(llbl[S.fZ.lv],ltyp[S.fZ.lv])
+        +'<button onclick="S.fZ=null;render()" style="background:none;border:none;color:'+C.textL+';cursor:pointer;font-size:15px;padding:2px;">✕</button></div></div>'
+        +'<div style="margin-top:10px;padding:8px 10px;background:'+(S.fZ.q>0?C.okBg:C.errBg)+';border-radius:7px;">'
+        +'<span style="font-size:12px;font-weight:700;color:'+(S.fZ.q>0?C.ok:C.err)+';">'+(S.fZ.q>0?'✓ '+S.fZ.q+' cupos disponibles en Tiendas Ancla':'✗ Sin cupos disponibles en la zona')+'</span></div></div>';
+    }
+    content+='<div class="slabel">Zonas asignadas</div>';
+    for(var k=0;k<filt.length;k++){
+      var z=filt[k];
+      content+='<div onclick="selZ(\''+esc(z.id)+'\')" style="'+cs('padding:11px 14px;cursor:pointer;')+'">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+        +'<div><div style="font-size:14px;font-weight:700;color:'+C.text+';">'+z.n+'</div>'
+        +'<div style="font-size:12px;color:'+C.textM+';">'+z.v+' vendedores · '+z.q+' cupos libres</div></div>'
+        +bdg(llbl[z.lv],ltyp[z.lv])+'</div></div>';
+    }
+  } else if(S.fTab==='scanner'){
+    var bgs=['#0F2342','#1A3A5C',C.ok];
+    var lbs=['Escanear Código QR','Escaneando...','¡Identificado!'];
+    var sbs=['Toca para activar cámara','Apunta al código QR','Toca para registrar nuevo'];
+    var ics=['▣','📷','✓'];
+    content='<div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:8px;">'
+      +'<div style="font-size:13px;color:'+C.textM+';text-align:center;">Escanea el QR del comerciante para registrar la reubicación</div>'
+      +'<button onclick="doScan()" style="width:88%;padding:26px 0;background:'+bgs[S.fStep]+';border:none;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;box-shadow:0 8px 24px rgba(15,35,66,.28);">'
+      +'<span style="font-size:42px;line-height:1;">'+ics[S.fStep]+'</span>'
+      +'<span style="color:#fff;font-size:17px;font-weight:800;">'+lbs[S.fStep]+'</span>'
+      +'<span style="color:rgba(255,255,255,.6);font-size:11px;">'+sbs[S.fStep]+'</span></button>';
+    if(S.fStep===2){
+      content+='<div style="'+cs('')+'width:88%;">'
+        +'<div style="font-size:13px;font-weight:700;color:'+C.text+';margin-bottom:8px;">Comerciante identificado</div>'
+        +'<div style="padding:10px;background:'+C.okBg+';border-radius:8px;">'
+        +'<div style="font-weight:800;color:'+C.ok+';font-size:14px;">Carlos Muñoz · CM-04821</div>'
+        +'<div style="font-size:12px;color:'+C.textM+';margin-top:3px;">RUT 12.345.678-9 · 145 pts · Confiable ⭐</div></div>'
+        +'<button onclick="regReloc()" style="margin-top:10px;background:'+C.accent+';color:#fff;border:none;border-radius:9px;padding:11px;font-size:13px;font-weight:800;cursor:pointer;width:100%;">Registrar Reubicación →</button></div>';
+    }
+    content+='<div style="'+cs('')+'width:88%;">'
+      +'<div style="font-size:11px;font-weight:700;color:'+C.textL+';text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">Mi resumen del día</div>'
+      +'<div style="display:flex;">'
+      +'<div style="flex:1;text-align:center;border-right:1px solid '+C.bdr+';"><div style="font-size:24px;font-weight:900;color:'+C.navy+';">'+S.fHist.length+'</div><div style="font-size:10px;color:'+C.textM+';">Escaneados</div></div>'
+      +'<div style="flex:1;text-align:center;border-right:1px solid '+C.bdr+';"><div style="font-size:24px;font-weight:900;color:'+C.ok+';">'+okCnt+'</div><div style="font-size:10px;color:'+C.textM+';">Exitosos</div></div>'
+      +'<div style="flex:1;text-align:center;"><div style="font-size:24px;font-weight:900;color:'+C.err+';">'+(S.fHist.length-okCnt)+'</div><div style="font-size:10px;color:'+C.textM+';">Fallidos</div></div>'
+      +'</div></div></div>';
+  } else {
+    content='<div class="slabel">Historial de hoy</div>';
+    for(var hi=0;hi<S.fHist.length;hi++){
+      var hh=S.fHist[hi];
+      content+='<div style="'+cs('padding:11px 14px;')+'">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
+        +'<div><div style="font-size:14px;font-weight:700;color:'+C.text+';">'+hh.n+'</div>'
+        +'<div style="font-size:11px;color:'+C.textL+';">'+hh.rut+'</div>'
+        +'<div style="font-size:12px;color:'+C.textM+';margin-top:3px;">'+(hh.ok?'→ '+hh.dest:'Sin cupos disponibles')+'</div></div>'
+        +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'
+        +'<span style="font-size:11px;color:'+C.textL+';">'+hh.t+'</span>'
+        +bdg(hh.ok?'Exitoso':'Fallido',hh.ok?'ok':'err')+'</div></div></div>';
+    }
+  }
+
+  var srch=nhdr('Fiscalizador','Rodrigo Fuentes',
+    '<div style="display:flex;gap:8px;align-items:center;">'
+    +'<div style="flex:1;background:rgba(255,255,255,.12);border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.15);">'
+    +'<span style="font-size:13px;color:rgba(255,255,255,.5);">🔍</span>'
+    +'<input id="fsq" value="'+S.fQ.replace(/"/g,'&quot;')+'" placeholder="Buscar por RUT o nombre..." oninput="S.fQ=this.value;S.fZ=null;render()" style="border:none;background:none;outline:none;flex:1;font-size:13px;color:#fff;"/></div>'
+    +'<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">'
+    +'<div onclick="S.fCupos=!S.fCupos;render()" style="width:42px;height:23px;border-radius:12px;background:'+(S.fCupos?C.accent:'rgba(255,255,255,.2)')+';cursor:pointer;position:relative;">'
+    +'<div style="position:absolute;top:2.5px;left:'+(S.fCupos?'21px':'2.5px')+';width:18px;height:18px;border-radius:50%;background:#fff;"></div></div>'
+    +'<span style="font-size:8px;color:rgba(255,255,255,.5);font-weight:700;">Con cupos</span></div></div>');
+
+  return '<div class="view">'+srch+'<div class="scroll">'+content+'</div>'
+    +bnav([{id:'inicio',ic:'🗺️',lb:'Mapa'},{id:'scanner',ic:'▣',lb:'Escanear QR'},{id:'historial',ic:'📋',lb:'Historial'}],S.fTab)+'</div>';
+}
+
+/* ════════════════════════════════════════════════════
+   COMERCIANTE
+═══════════════════════════════════════════════════ */
+function comHTML(){
+  var pct=(145/200)*100;
+  var isRel=S.cEst==='reubicado';
+  var content='';
+  if(S.cTab==='qr'){
+    content='<div style="'+cs('')+'border-left:4px solid '+(isRel?C.ok:'#D4900A')+';border-radius:0 12px 12px 0;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+      +'<div><div style="font-size:11px;color:'+C.textL+';font-weight:600;">Estado actual</div>'
+      +'<div style="font-size:15px;font-weight:800;color:'+C.text+';margin-top:2px;">'+(isRel?'🟢 REUBICADO':'🟡 EN CALLE')+'</div>'
+      +(isRel?'<div style="font-size:11px;color:'+C.textM+';margin-top:2px;">Galería El Vecino · Sector A · 3h 20min restantes</div>':'')+'</div>'
+      +'<button onclick="S.cEst=S.cEst===\'reubicado\'?\'calle\':\'reubicado\';render()" style="background:'+(isRel?C.errBg:C.okBg)+';border:none;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:700;color:'+(isRel?C.err:C.ok)+';cursor:pointer;">'+(isRel?'Finalizar':'Reubicarse')+'</button>'
+      +'</div></div>'
+      +'<div style="'+cs('display:flex;flex-direction:column;align-items:center;gap:12px;padding:20px 15px;')+'">'
+      +'<div style="font-size:10px;font-weight:700;color:'+C.textL+';letter-spacing:.1em;text-transform:uppercase;">Mi código de identificación</div>'
+      +'<div style="padding:14px;background:#fff;border-radius:12px;border:2px solid '+C.bdr+';">'+qrSvg(180,'CM-04821')+'</div>'
+      +'<div style="text-align:center;"><div style="font-size:20px;font-weight:900;color:'+C.navy+';letter-spacing:.1em;">CM-04821</div>'
+      +'<div style="font-size:11px;color:'+C.textL+';">Carlos Muñoz · RUT 12.345.678-9</div></div>'
+      +'<div style="font-size:11px;color:'+C.textM+';padding:6px 14px;background:'+C.bg+';border-radius:8px;border:1px solid '+C.bdr+';">Muestra este código al fiscalizador</div>'
+      +'</div>';
+  } else if(S.cTab==='tiendas'){
+    var pins=[];
+    for(var i=0;i<TIENDAS.length;i++){
+      var t=TIENDAS[i];
+      pins.push({x:t.x,y:t.y,lbl:t.lib>0?String(t.lib):'✗',col:t.lib>0?C.accent:C.textL,fn:"selSt('"+esc(t.id)+"')"});
+    }
+    content='<div style="font-size:12px;color:'+C.textM+';text-align:center;">Tiendas Ancla cercanas · toca un pin</div>'
+      +'<div style="'+cs('padding:0;overflow:hidden;')+'">'+pinSvg(pins)+'</div>';
+    if(S.cS){
+      content+='<div style="'+cs('')+'border-left:4px solid '+(S.cS.lib>0?C.ok:C.err)+';border-radius:0 12px 12px 0;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
+        +'<div><div style="font-size:15px;font-weight:800;color:'+C.text+';">'+S.cS.n+'</div>'
+        +'<div style="font-size:12px;color:'+C.textM+';">'+S.cS.d+' · ⭐ '+S.cS.r+'</div></div>'
+        +'<button onclick="S.cS=null;render()" style="background:none;border:none;color:'+C.textL+';cursor:pointer;font-size:16px;padding:2px;">✕</button></div>'
+        +'<div style="margin-top:8px;padding:7px 10px;background:'+(S.cS.lib>0?C.okBg:C.errBg)+';border-radius:7px;">'
+        +'<span style="font-size:12px;font-weight:700;color:'+(S.cS.lib>0?C.ok:C.err)+';">'+(S.cS.lib>0?S.cS.lib+' cupos disponibles ahora':'Sin cupos — local lleno')+'</span></div>'
+        +(S.cS.lib>0?'<button style="margin-top:10px;background:'+C.accent+';color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;width:100%;">Solicitar Reubicación Aquí</button>':'')
+        +'</div>';
+    }
+    content+='<div class="slabel">Lista de tiendas</div>';
+    for(var j=0;j<TIENDAS.length;j++){
+      var s=TIENDAS[j];
+      content+='<div onclick="selSt(\''+esc(s.id)+'\')" style="'+cs('padding:11px 14px;cursor:pointer;')+'">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+        +'<div><div style="font-size:14px;font-weight:700;color:'+C.text+';">'+s.n+'</div>'
+        +'<div style="font-size:12px;color:'+C.textM+';">'+s.d+' · ⭐ '+s.r+'</div></div>'
+        +bdg(s.lib>0?s.lib+' cupos':'Lleno',s.lib>0?'ok':'err')+'</div></div>';
+    }
+  } else {
+    content='<div style="'+cs('')+'">'
+      +'<div style="font-size:14px;font-weight:800;color:'+C.text+';margin-bottom:10px;">Beneficios activos</div>'
+      +[{ic:'🏥',tit:'Seguro de salud básico',ds:'Activo desde Mar 2025',tp:'ok'},
+        {ic:'📦',tit:'Subsidio de almacenaje',ds:'2 días gratuitos/semana',tp:'info'},
+        {ic:'📱',tit:'Capacitación digital',ds:'Próxima: 15 Mayo · 10am',tp:'navy'}].map(function(b,idx){
+        return '<div style="display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:'+(idx<2?'1px solid '+C.bdr:'none')+';"><span style="font-size:22px;">'+b.ic+'</span><div style="flex:1;"><div style="font-size:13px;font-weight:700;color:'+C.text+';">'+b.tit+'</div><div style="font-size:11px;color:'+C.textM+';">'+b.ds+'</div></div>'+bdg('Activo',b.tp)+'</div>';
+      }).join('')+'</div>'
+      +'<div style="'+cs('')+'background:'+C.navy+';">'
+      +'<div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:6px;">Próximo nivel · 200 pts</div>'
+      +'<div style="height:6px;background:rgba(255,255,255,.18);border-radius:3px;margin-bottom:10px;"><div style="height:100%;width:'+pct+'%;background:'+C.accent+';border-radius:3px;"></div></div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.7);">⭐ Prioridad en asignación de cupos</div>'
+      +'<div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:3px;">📋 Contrato comercial formal</div></div>';
+  }
+
+  var hdr=nhdr('Comerciante','Carlos Muñoz',
+    '<div><div style="display:flex;justify-content:space-between;margin-bottom:5px;">'
+    +'<span style="font-size:11px;color:rgba(255,255,255,.65);font-weight:600;">Nivel de Confianza</span>'
+    +'<span style="font-size:11px;font-weight:800;color:#fff;">145 / 200 pts</span></div>'
+    +'<div style="height:6px;background:rgba(255,255,255,.18);border-radius:3px;overflow:hidden;">'
+    +'<div style="height:100%;width:'+pct+'%;background:'+C.accent+';border-radius:3px;"></div></div>'
+    +'<div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:4px;">⭐ Comerciante Confiable · 55 pts para el siguiente nivel</div></div>');
+
+  return '<div class="view">'+hdr+'<div class="scroll">'+content+'</div>'
+    +bnav([{id:'qr',ic:'▣',lb:'Mi QR'},{id:'tiendas',ic:'📍',lb:'Tiendas'},{id:'beneficios',ic:'🎁',lb:'Beneficios'}],S.cTab)+'</div>';
+}
+
+/* ════════════════════════════════════════════════════
+   TIENDA ANCLA
+═══════════════════════════════════════════════════ */
+function anclaHTML(){
+  var mx=10,pct=(S.aCupos/mx)*100;
+  var cc=S.aCupos<=2?C.err:S.aCupos<=5?'#D4900A':C.ok;
+  var content='';
+  if(S.aTab==='cupos'){
+    content='<div class="slabel">Comerciantes activos ('+S.aV.length+')</div>';
+    if(!S.aV.length) content+='<div style="text-align:center;padding:30px 0;color:'+C.textL+';font-size:13px;">No hay comerciantes activos</div>';
+    for(var i=0;i<S.aV.length;i++){
+      var v=S.aV[i];
+      content+='<div style="'+cs('padding:12px 14px;')+'">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
+        +'<div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;">'
+        +'<span style="font-size:14px;font-weight:700;color:'+C.text+';">'+v.n+'</span>'+bdg(v.cat,'navy')+'</div>'
+        +'<div style="font-size:11px;color:'+C.textL+';">'+v.cod+'</div>'
+        +'<div style="font-size:12px;color:'+C.textM+';margin-top:2px;">Llegó: '+v.arr+' · Lleva: '+v.dur+'</div></div>'
+        +'<button onclick="finJornada(\''+esc(v.uid)+'\')" style="background:'+C.errBg+';color:'+C.err+';border:none;border-radius:8px;padding:7px 10px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;margin-left:8px;">Finalizar Jornada</button>'
+        +'</div></div>';
+    }
+  } else if(S.aTab==='mapa'){
+    content='<div style="font-size:12px;color:'+C.textM+';text-align:center;">Comerciantes en camino a tu local</div>'
+      +'<div style="'+cs('padding:0;overflow:hidden;')+'">'+pinSvg([{x:85,y:75,lbl:'→',col:C.navy},{x:270,y:72,lbl:'→',col:C.navy},{x:130,y:168,lbl:'→',col:C.navy}])+'</div>'
+      +'<div style="'+cs('')+'">'
+      +'<div style="font-size:13px;font-weight:800;color:'+C.text+';margin-bottom:8px;">Llegadas estimadas</div>'
+      +[['Roberto Silva','~8 min','RS-08821'],['Camila Torres','~15 min','CT-03341'],['Luis Herrera','~22 min','LH-06621']].map(function(r,idx){
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:'+(idx<2?'1px solid '+C.bdr:'none')+';"><div><div style="font-size:13px;font-weight:600;color:'+C.text+';">'+r[0]+'</div><div style="font-size:11px;color:'+C.textL+';">'+r[2]+'</div></div>'+bdg(r[1],'navy')+'</div>';
+      }).join('')+'</div>';
+  } else {
+    var used=mx-S.aCupos;
+    content='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+      +[[used,'En uso ahora','accent'],[S.aCupos,'Disponibles','ok'],[S.aV.length,'Activos hoy','info'],[mx,'Aforo total','neu']].map(function(r){
+        return '<div style="'+cs('text-align:center;padding:14px 10px;')+'"><div style="font-size:26px;font-weight:900;color:'+(C[r[2]]||C.text)+';">'+r[0]+'</div><div style="font-size:11px;color:'+C.textM+';margin-top:3px;">'+r[1]+'</div></div>';
+      }).join('')+'</div>'
+      +'<div style="'+cs('')+'"><div style="font-size:11px;color:'+C.textM+';margin-bottom:6px;font-weight:600;">Capacidad utilizada</div>'
+      +'<div style="height:10px;background:'+C.bg+';border-radius:5px;overflow:hidden;border:1px solid '+C.bdr+';">'
+      +'<div style="height:100%;width:'+Math.round(100-pct)+'%;background:'+C.accent+';border-radius:5px;"></div></div>'
+      +'<div style="font-size:12px;color:'+C.textL+';margin-top:5px;text-align:right;">'+Math.round(100-pct)+'% ocupado</div></div>';
+  }
+
+  var header='<div class="nheader">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'
+    +'<div><div style="font-size:10px;letter-spacing:.1em;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;">Tienda Ancla</div>'
+    +'<div style="font-size:17px;font-weight:800;color:#fff;">Galería El Vecino</div></div>'
+    +'<button onclick="doLogout()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:6px 12px;font-size:12px;color:#fff;cursor:pointer;font-weight:700;">Salir</button></div>'
+    +'<div style="background:rgba(255,255,255,.08);border-radius:12px;padding:12px 14px;border:1px solid rgba(255,255,255,.12);">'
+    +'<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px;">Control de cupos en tiempo real</div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;">'
+    +'<button onclick="chCupos(-1)" '+(S.aCupos===0?'disabled':'')+' style="width:46px;height:46px;border-radius:12px;background:'+(S.aCupos===0?'rgba(255,255,255,.06)':C.errBg)+';color:'+(S.aCupos===0?'rgba(255,255,255,.3)':C.err)+';border:1.5px solid '+(S.aCupos===0?'rgba(255,255,255,.1)':'rgba(192,16,32,.3)')+';font-size:24px;font-weight:800;cursor:'+(S.aCupos===0?'default':'pointer')+';display:flex;align-items:center;justify-content:center;">−</button>'
+    +'<div style="text-align:center;"><div style="font-size:44px;font-weight:900;color:'+cc+';line-height:1.1;">'+S.aCupos+'<span style="font-size:20px;color:rgba(255,255,255,.35);font-weight:400;"> / '+mx+'</span></div>'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.5);">espacios libres ahora</div></div>'
+    +'<button onclick="chCupos(1)" '+(S.aCupos===mx?'disabled':'')+' style="width:46px;height:46px;border-radius:12px;background:'+(S.aCupos===mx?'rgba(255,255,255,.06)':C.okBg)+';color:'+(S.aCupos===mx?'rgba(255,255,255,.3)':C.ok)+';border:1.5px solid '+(S.aCupos===mx?'rgba(255,255,255,.1)':'rgba(26,110,60,.3)')+';font-size:24px;font-weight:800;cursor:'+(S.aCupos===mx?'default':'pointer')+';display:flex;align-items:center;justify-content:center;">+</button></div>'
+    +'<div style="margin-top:10px;height:6px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden;">'
+    +'<div style="height:100%;width:'+pct+'%;background:'+cc+';border-radius:3px;"></div></div></div></div>';
+
+  return '<div class="view">'+header+'<div class="scroll">'+content+'</div>'
+    +bnav([{id:'cupos',ic:'👥',lb:'Cupos'},{id:'mapa',ic:'📍',lb:'En camino'},{id:'reporte',ic:'📊',lb:'Reporte'}],S.aTab)+'</div>';
+}
+
+/* ════════════════════════════════════════════════════
+   ADMIN
+═══════════════════════════════════════════════════ */
+function adminHTML(){
+  var okCnt=0; for(var i=0;i<H0.length;i++) if(H0[i].ok) okCnt++;
+  var crit=[]; for(var j=0;j<ZONAS.length;j++) if(ZONAS[j].lv==='high') crit.push(ZONAS[j]);
+  var rank=TIENDAS.slice().sort(function(a,b){return(b.max-b.lib)-(a.max-a.lib);});
+  var content='';
+  if(S.adTab==='dashboard'){
+    content='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+      +[[H0.length,'Reubicaciones hoy','+12% vs ayer','accent'],[okCnt,'Exitosas hoy',(H0.length-okCnt)+' fallidas','ok'],[okCnt*30,'Puntos entregados',okCnt+'×30 pts','info'],[crit.length,'Zonas críticas','de '+ZONAS.length+' totales',crit.length>0?'err':'ok']].map(function(r){
+        return '<div style="'+cs('padding:14px 12px;')+'"><div style="font-size:10px;color:'+C.textM+';font-weight:600;margin-bottom:4px;">'+r[1]+'</div><div style="font-size:28px;font-weight:900;color:'+C.text+';">'+r[0]+'</div><div style="margin-top:5px;">'+bdg(r[2],r[3])+'</div></div>';
+      }).join('')+'</div>';
+    if(crit.length){
+      content+='<div style="background:'+C.errBg+';border-radius:12px;padding:13px 14px;border:1px solid rgba(192,16,32,.18);">'
+        +'<div style="font-size:12px;font-weight:800;color:'+C.err+';margin-bottom:8px;">⚠️ Zonas Críticas · Nivel Rojo</div>'
+        +crit.map(function(z,idx){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:'+(idx<crit.length-1?'1px solid rgba(192,16,32,.15)':'none')+';"><div><div style="font-size:14px;font-weight:800;color:'+C.err+';">'+z.n+'</div><div style="font-size:11px;color:#B85555;">'+z.v+' vendedores · '+z.q+' cupos libres</div></div>'+bdg('Crítico','err')+'</div>';}).join('')
+        +'</div>';
+    }
+    content+='<div class="slabel">Ranking Tiendas Ancla</div>';
+    for(var k=0;k<rank.length;k++){
+      var t=rank[k];
+      var medal=k===0?C.accent:k===1?'#E6EEF6':C.bg;
+      var medalTxt=k===0?'#fff':k===1?C.navy:C.textL;
+      content+='<div style="'+cs('padding:11px 14px;')+'">'
+        +'<div style="display:flex;align-items:center;gap:12px;">'
+        +'<div style="width:30px;height:30px;border-radius:50%;flex-shrink:0;background:'+medal+';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:'+medalTxt+';">'+(k+1)+'</div>'
+        +'<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:'+C.text+';">'+t.n+'</div><div style="font-size:11px;color:'+C.textM+';">'+t.sec+' · ⭐ '+t.r+'</div></div>'
+        +'<div style="text-align:right;"><div style="font-size:18px;font-weight:900;color:'+C.accent+';">'+(t.max-t.lib)+'</div><div style="font-size:10px;color:'+C.textL+';">en uso</div></div></div></div>';
+    }
+  } else if(S.adTab==='mapa'){
+    content='<div style="'+cs('padding:0;overflow:hidden;')+'">'+heatSvg(null,false)
+      +'<div style="padding:6px 12px 10px;display:flex;gap:12px;">'
+      +'<div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;border-radius:2px;background:#E8192C;"></div><span style="font-size:10px;color:'+C.textM+';">Crítico</span></div>'
+      +'<div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;border-radius:2px;background:#FFA200;"></div><span style="font-size:10px;color:'+C.textM+';">Moderado</span></div>'
+      +'<div style="display:flex;align-items:center;gap:5px;"><div style="width:9px;height:9px;border-radius:2px;background:#1A6E3C;"></div><span style="font-size:10px;color:'+C.textM+';">Óptimo</span></div>'
+      +'</div></div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+      +[[ZONAS.length,'Zonas monitoreadas'],[TIENDAS.length,'Tiendas activas'],[crit.length,'Zonas críticas'],(function(){var s=0;for(var i=0;i<TIENDAS.length;i++)s+=TIENDAS[i].lib;return [s,'Cupos libres totales'];})()].map(function(r){
+        return '<div style="'+cs('text-align:center;padding:14px 10px;')+'"><div style="font-size:24px;font-weight:900;color:'+C.navy+';">'+r[0]+'</div><div style="font-size:11px;color:'+C.textM+';margin-top:2px;">'+r[1]+'</div></div>';
+      }).join('')+'</div>';
+  } else {
+    content='<div style="'+cs('')+'"><div style="font-size:14px;font-weight:800;color:'+C.text+';margin-bottom:12px;">Parámetros del sistema</div>'
+      +[['Cupos máx. por tienda','10 espacios'],['Horas máx. de jornada','8 horas'],['Puntos por reubicación','30 pts'],['Umbral zona crítica','30 vendedores'],['Fiscalizadores en turno','4 activos']].map(function(r,idx){
+        return '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:'+(idx<4?'1px solid '+C.bdr:'none')+';"><span style="font-size:13px;color:'+C.textM+';">'+r[0]+'</span><span style="font-size:13px;font-weight:800;color:'+C.text+';">'+r[1]+'</span></div>';
+      }).join('')+'</div>';
+  }
+
+  var now=new Date().toLocaleDateString('es-CL',{weekday:'long',day:'numeric',month:'long'});
+  var header='<div class="nheader">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+    +'<div><div style="font-size:10px;letter-spacing:.1em;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;">Administrador</div>'
+    +'<div style="font-size:17px;font-weight:800;color:#fff;">Panel de Control</div></div>'
+    +'<button onclick="doLogout()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:6px 12px;font-size:12px;color:#fff;cursor:pointer;font-weight:700;">Salir</button></div>'
+    +'<div style="margin-top:6px;display:flex;align-items:center;justify-content:space-between;">'
+    +'<span style="font-size:11px;color:rgba(255,255,255,.45);">'+now+'</span>'
+    +'<div style="display:flex;align-items:center;gap:6px;"><div style="width:7px;height:7px;border-radius:50%;background:#3DCC80;"></div><span style="font-size:10px;color:rgba(255,255,255,.55);font-weight:600;">Sistema activo</span></div>'
+    +'</div></div>';
+
+  return '<div class="view">'+header+'<div class="scroll">'+content+'</div>'
+    +bnav([{id:'dashboard',ic:'📊',lb:'Dashboard'},{id:'mapa',ic:'🗺️',lb:'Mapa'},{id:'config',ic:'⚙️',lb:'Config'}],S.adTab)+'</div>';
+}
+
+/* ── RENDER ──────────────────────────────────────── */
+function render(){
+  var m=document.getElementById('main');
+  if(!S.role) m.innerHTML=loginHTML();
+  else if(S.role==='fiscal') m.innerHTML=fiscHTML();
+  else if(S.role==='comerciante') m.innerHTML=comHTML();
+  else if(S.role==='ancla') m.innerHTML=anclaHTML();
+  else if(S.role==='admin') m.innerHTML=adminHTML();
+}
+
+/* ── ACCIONES ────────────────────────────────────── */
+function hideLerr(){var e=document.getElementById('lerr');if(e)e.style.display='none';}
+
+function doLogin(){
+  var u=(document.getElementById('lu').value||'').trim().toLowerCase();
+  var p=document.getElementById('lp').value||'';
+  var ok={admin:'123',fiscal:'123',comerciante:'123',ancla:'123'};
+  if(ok[u]===p){S.role=u;render();}
+  else{var e=document.getElementById('lerr');if(e)e.style.display='block';}
+}
+function quickLogin(r){S.role=r;render();}
+function doLogout(){resetState();render();}
+
+function setTab(id){
+  if(S.role==='fiscal')S.fTab=id;
+  else if(S.role==='comerciante')S.cTab=id;
+  else if(S.role==='ancla')S.aTab=id;
+  else if(S.role==='admin')S.adTab=id;
+  render();
+}
+
+function selZ(id){
+  S.fZ=null;for(var i=0;i<ZONAS.length;i++)if(ZONAS[i].id===id){S.fZ=ZONAS[i];break;}
+  S.fTab='inicio';render();
+}
+function selSt(id){
+  S.cS=null;for(var i=0;i<TIENDAS.length;i++)if(TIENDAS[i].id===id){S.cS=TIENDAS[i];break;}
+  render();
+}
+
+function doScan(){
+  if(S.fStep===0){S.fStep=1;render();setTimeout(function(){S.fStep=2;render();},1400);}
+  else if(S.fStep===2){S.fStep=0;render();}
+}
+function regReloc(){
+  var t=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+  S.fHist.unshift({id:'h'+Date.now(),n:'Carlos Muñoz',rut:'12.345.678-9',t:t,ok:true,dest:'La Vega'});
+  S.fStep=0;S.fTab='historial';render();
+}
+
+function finJornada(uid){
+  S.aV=S.aV.filter(function(v){return v.uid!==uid;});
+  if(S.aCupos<10)S.aCupos++;render();
+}
+function chCupos(d){var n=S.aCupos+d;if(n>=0&&n<=10){S.aCupos=n;render();}}
+
+/* ── INIT ────────────────────────────────────────── */
+render();
+</script>
+</body>
+</html>
